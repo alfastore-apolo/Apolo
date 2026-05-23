@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>APOLO — Inteligência Artificial</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#080808;font-family:'Crimson Pro',serif;overflow:hidden}
+  ::-webkit-scrollbar{width:3px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:rgba(255,215,0,.2);border-radius:2px}
+
+  @keyframes rotR{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+  @keyframes rotL{from{transform:rotate(0)}to{transform:rotate(-360deg)}}
+  @keyframes glow{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}
+  @keyframes shim{0%{background-position:-200% center}100%{background-position:200% center}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes glowPulse{0%,100%{box-shadow:0 0 20px rgba(255,215,0,.2)}50%{box-shadow:0 0 50px rgba(255,215,0,.55)}}
+  @keyframes waveform{0%,100%{height:4px}50%{height:16px}}
+  @keyframes td{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-5px);opacity:1}}
+  @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+  @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.7}}
+  @keyframes recPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+
+  /* Setup Screen */
+  #setup-screen{position:fixed;inset:0;z-index:300;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+  .setup-title{font-family:'Cinzel',serif;font-size:clamp(36px,8vw,64px);font-weight:900;letter-spacing:.2em;background:linear-gradient(90deg,#b8860b,#ffd700,#fffacd,#ffd700,#b8860b);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shim 3s linear infinite;margin-bottom:8px}
+  .setup-sub{font-family:'Crimson Pro',serif;font-style:italic;color:rgba(255,215,0,.45);font-size:15px;letter-spacing:.15em;margin-bottom:40px}
+  .setup-box{background:rgba(255,215,0,.05);border:1px solid rgba(255,215,0,.2);border-radius:16px;padding:28px;width:100%;max-width:480px}
+  .setup-label{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.2em;color:rgba(255,215,0,.6);margin-bottom:10px}
+  .setup-desc{font-size:13px;color:rgba(255,255,255,.4);margin-bottom:16px;line-height:1.5}
+  .setup-input{width:100%;background:rgba(0,0,0,.5);border:1px solid rgba(255,215,0,.3);border-radius:10px;padding:12px 16px;color:#ffd700;font-family:'Crimson Pro',serif;font-size:16px;outline:none;letter-spacing:.05em}
+  .setup-input::placeholder{color:rgba(255,215,0,.25);font-size:14px}
+  .setup-input:focus{border-color:rgba(255,215,0,.6);box-shadow:0 0 20px rgba(255,215,0,.1)}
+  .setup-btn{margin-top:20px;width:100%;padding:14px;background:linear-gradient(135deg,#b8860b,#ffd700);border:none;border-radius:10px;color:#000;font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:.2em;cursor:pointer;transition:all .3s}
+  .setup-btn:hover{transform:scale(1.02);box-shadow:0 0 30px rgba(255,215,0,.4)}
+  .setup-link{margin-top:14px;text-align:center;font-size:12px;color:rgba(255,215,0,.3)}
+  .setup-link a{color:rgba(255,215,0,.55);text-decoration:none}
+  .setup-link a:hover{color:#ffd700}
+
+  /* App layout */
+  #app{display:none;height:100vh;flex-direction:row}
+  #app.visible{display:flex}
+  #sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:15}
+  #sidebar-overlay.visible{display:block}
+
+  /* Sidebar */
+  #sidebar{position:fixed;left:0;top:0;bottom:0;width:280px;background:#0c0c0c;border-right:1px solid rgba(255,215,0,.1);display:flex;flex-direction:column;z-index:20;transform:translateX(-100%);transition:transform .3s ease;overflow-y:auto}
+  #sidebar.open{transform:translateX(0)}
+  .sidebar-header{padding:18px 16px 14px;border-bottom:1px solid rgba(255,215,0,.08);display:flex;align-items:center;gap:10px}
+  .apolo-sun-sm{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle,#fff8dc,#ffd700,#b8860b);box-shadow:0 0 16px rgba(255,215,0,.4);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+  .apolo-name{font-family:'Cinzel',serif;font-size:16px;font-weight:700;background:linear-gradient(90deg,#ffd700,#fffacd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.1em}
+  .new-conv-btn{margin:12px 12px 6px;padding:10px;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.2);border-radius:8px;color:#ffd700;font-family:'Cinzel',serif;font-size:11px;letter-spacing:.15em;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;width:calc(100% - 24px)}
+  .new-conv-btn:hover{background:rgba(255,215,0,.14)}
+
+  /* Mode selector */
+  .mode-section{padding:8px 12px;border-bottom:1px solid rgba(255,215,0,.06)}
+  .section-label{font-size:10px;color:rgba(255,215,0,.3);font-family:monospace;letter-spacing:.1em;margin-bottom:6px}
+  .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  .mode-btn{padding:7px 8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;color:rgba(255,255,255,.4);cursor:pointer;font-size:11px;transition:all .15s;text-align:left;opacity:.6}
+  .mode-btn.active{opacity:1}
+  .mode-btn:hover{opacity:1}
+  .mode-icon{font-size:14px;margin-bottom:2px}
+  .mode-label{font-family:'Cinzel',serif;font-size:9px;letter-spacing:.05em}
+
+  /* ── PERSONALITY SECTION ── */
+  .personality-section{padding:8px 12px;border-bottom:1px solid rgba(255,215,0,.06)}
+  .personality-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:6px}
+  .pers-btn{padding:8px 4px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;color:rgba(255,255,255,.45);cursor:pointer;font-size:10px;transition:all .2s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px}
+  .pers-btn:hover{background:rgba(255,215,0,.07);border-color:rgba(255,215,0,.25);color:rgba(255,215,0,.8)}
+  .pers-btn.active{background:rgba(255,215,0,.12);border-color:#ffd700;color:#ffd700}
+  .pers-icon{font-size:18px}
+  .pers-label{font-family:'Cinzel',serif;font-size:8px;letter-spacing:.05em;line-height:1.2}
+
+  /* Others submenu */
+  .others-submenu{display:none;margin-top:6px;background:rgba(0,0,0,.4);border:1px solid rgba(255,215,0,.12);border-radius:8px;padding:6px}
+  .others-submenu.open{display:block}
+  .others-option{padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.55);transition:all .15s;display:flex;align-items:center;gap:8px}
+  .others-option:hover{background:rgba(255,215,0,.08);color:#ffd700}
+  .others-option.active{background:rgba(255,215,0,.12);color:#ffd700}
+
+  /* Image mode toggle */
+  .img-toggle-section{padding:8px 12px;border-bottom:1px solid rgba(255,215,0,.06);display:flex;align-items:center;justify-content:space-between}
+  .toggle{width:40px;height:22px;border-radius:11px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+  .toggle-knob{position:absolute;top:3px;width:16px;height:16px;border-radius:50%;background:#000;transition:left .2s}
+
+  /* Conversations list */
+  #conv-list{flex:1;overflow-y:auto;padding:6px 8px}
+  .conv-item{padding:9px 11px;border-radius:6px;border-left:2px solid transparent;cursor:pointer;margin-bottom:2px;display:flex;align-items:center;justify-content:space-between;transition:all .15s}
+  .conv-item:hover{background:rgba(255,215,0,.05)}
+  .conv-item.active{background:rgba(255,215,0,.08);border-left:2px solid #ffd700}
+  .conv-title{color:rgba(255,255,255,.65);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .conv-item.active .conv-title{color:#ffd700}
+  .conv-date{color:rgba(255,215,0,.28);font-size:10px;margin-top:2px}
+  .conv-del{background:none;border:none;color:rgba(255,255,255,.18);cursor:pointer;font-size:13px;padding:2px 4px;transition:color .15s;flex-shrink:0}
+  .conv-del:hover{color:#ffd700}
+
+  /* Voice toggle */
+  .voice-section{padding:12px 16px;border-top:1px solid rgba(255,215,0,.08);display:flex;align-items:center;justify-content:space-between}
+
+  /* Main chat */
+  #chat-area{flex:1;display:flex;flex-direction:column;min-width:0}
+
+  /* Header */
+  #chat-header{padding:13px 18px;border-bottom:1px solid rgba(255,215,0,.1);background:rgba(0,0,0,.5);backdrop-filter:blur(12px);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5}
+  .menu-btn{background:none;border:none;color:rgba(255,215,0,.55);cursor:pointer;font-size:20px;padding:0 4px;transition:color .15s}
+  .menu-btn:hover{color:#ffd700}
+  .apolo-sun{width:36px;height:36px;border-radius:50%;background:radial-gradient(circle,#fff8dc,#ffd700,#b8860b);box-shadow:0 0 20px rgba(255,215,0,.4);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .apolo-sun.speaking{animation:glowPulse 1s ease-in-out infinite}
+  .header-status{font-size:10px;color:rgba(255,215,0,.4);font-family:monospace;letter-spacing:.06em}
+  .mode-badge{border-radius:20px;padding:2px 10px;font-size:10px;font-family:monospace;letter-spacing:.08em}
+  .waveform-bar{width:3px;background:#ffd700;border-radius:2px}
+  .stop-btn{background:none;border:1px solid rgba(255,215,0,.3);border-radius:4px;color:rgba(255,215,0,.6);cursor:pointer;font-size:10px;padding:2px 8px;font-family:monospace}
+
+  /* Messages */
+  #messages{flex:1;overflow-y:auto;padding:22px 16px;display:flex;flex-direction:column;gap:18px;max-width:800px;width:100%;margin:0 auto;align-self:center}
+  .msg-wrap{animation:fadeUp .3s ease}
+  .msg-row{display:flex;gap:10px;align-items:flex-start}
+  .msg-row.user{flex-direction:row-reverse}
+  .msg-avatar{width:32px;height:32px;border-radius:50%;background:radial-gradient(circle,#fff8dc,#ffd700,#b8860b);box-shadow:0 0 12px rgba(255,215,0,.35);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;margin-top:2px}
+  .msg-body{max-width:76%}
+  .msg-mode-tag{font-size:10px;font-family:monospace;letter-spacing:.08em;margin-bottom:4px;display:flex;align-items:center;gap:4px}
+  .msg-bubble{padding:11px 15px;font-family:'Crimson Pro',serif;font-size:16px;line-height:1.65;white-space:pre-wrap}
+  .msg-bubble.ai{border-radius:4px 18px 18px 18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,215,0,.12);color:rgba(255,255,255,.88);box-shadow:0 2px 10px rgba(0,0,0,.3)}
+  .msg-bubble.user{border-radius:18px 18px 4px 18px;background:linear-gradient(135deg,#b8860b,#8b6914);color:#fffacd;box-shadow:0 4px 18px rgba(184,134,11,.25)}
+  .msg-time{font-size:10px;color:rgba(255,215,0,.22);font-family:monospace;margin-top:3px;padding-inline:4px}
+  .msg-time.user{text-align:right}
+
+  /* Image message */
+  .img-container{position:relative;max-width:420px;margin-bottom:10px}
+  .img-result{width:100%;border-radius:14px;display:block;border:1px solid rgba(255,215,0,.25);box-shadow:0 8px 32px rgba(0,0,0,.5);opacity:0;transition:opacity .5s ease}
+  .img-loading-overlay{position:absolute;inset:0;background:rgba(255,215,0,.04);border-radius:14px;border:1px solid rgba(255,215,0,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:200px}
+  .img-spinner{width:36px;height:36px;border-radius:50%;border:3px solid rgba(255,215,0,.3);border-top-color:#ffd700;animation:spin .8s linear infinite}
+  .img-loading-text{color:rgba(255,215,0,.5);font-size:11px;font-family:monospace;letter-spacing:.1em}
+  .img-save-btn{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.7);border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:4px 10px;color:#ffd700;font-size:11px;font-family:monospace;text-decoration:none;backdrop-filter:blur(4px)}
+
+  /* User uploaded image */
+  .user-img-preview{max-width:260px;border-radius:12px;display:block;border:1px solid rgba(255,215,0,.3);margin-bottom:8px}
+
+  /* Audio message */
+  .audio-bubble{background:rgba(255,255,255,.05);border:1px solid rgba(255,215,0,.15);border-radius:18px 18px 4px 18px;padding:10px 14px;display:flex;align-items:center;gap:10px}
+  .audio-bubble audio{height:32px;max-width:220px}
+
+  /* Typing dots */
+  .typing-wrap{display:flex;gap:10px;align-items:flex-end}
+  .typing-bubble{padding:11px 15px;background:rgba(255,255,255,.05);border:1px solid rgba(255,215,0,.12);border-radius:4px 18px 18px 18px}
+  .typing-dots{display:flex;gap:5px;padding:2px 0;align-items:center}
+  .typing-dot{width:7px;height:7px;border-radius:50%;background:#ffd700}
+  .typing-label{font-size:10px;color:rgba(255,215,0,.35);font-family:monospace;margin-top:4px}
+
+  /* Input area */
+  #input-area{padding:10px 16px 14px;border-top:1px solid rgba(255,215,0,.08);background:rgba(0,0,0,.45);backdrop-filter:blur(10px);max-width:800px;width:100%;margin:0 auto;align-self:center}
+
+  /* Image preview strip */
+  #img-preview-strip{display:none;margin-bottom:8px;position:relative}
+  #img-preview-strip img{height:60px;width:60px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,215,0,.3)}
+  .strip-remove{position:absolute;top:-6px;left:48px;background:rgba(0,0,0,.8);border:1px solid rgba(255,215,0,.4);border-radius:50%;width:18px;height:18px;color:#ffd700;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+  /* Audio recording indicator */
+  #rec-indicator{display:none;align-items:center;gap:8px;margin-bottom:8px;padding:8px 12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:10px}
+  #rec-indicator.active{display:flex}
+  .rec-dot{width:10px;height:10px;border-radius:50%;background:#ef4444;animation:pulse .8s ease-in-out infinite}
+  .rec-time{font-family:monospace;font-size:12px;color:#ef4444}
+  .rec-cancel{margin-left:auto;background:none;border:none;color:rgba(239,68,68,.6);cursor:pointer;font-size:11px;font-family:monospace}
+
+  .chat-input-wrap{display:flex;gap:8px;align-items:flex-end;background:rgba(255,255,255,.04);border:1px solid rgba(255,215,0,.18);border-radius:16px;padding:9px 10px}
+  #chat-input{flex:1;background:transparent;border:none;color:rgba(255,255,255,.92);font-family:'Crimson Pro',serif;font-size:16px;line-height:1.5;max-height:120px;overflow:auto;caret-color:#ffd700;resize:none;outline:none}
+
+  /* Action buttons in input */
+  .input-action-btn{width:34px;height:34px;border-radius:50%;flex-shrink:0;border:1px solid rgba(255,215,0,.2);background:rgba(255,215,0,.06);color:rgba(255,215,0,.55);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .input-action-btn:hover{background:rgba(255,215,0,.14);color:#ffd700;border-color:rgba(255,215,0,.4)}
+  .input-action-btn.recording{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.5);color:#ef4444;animation:recPulse 1s ease-in-out infinite}
+
+  .send-btn{width:38px;height:38px;border-radius:50%;flex-shrink:0;border:1px solid rgba(255,215,0,.4);background:rgba(255,215,0,.13);color:#ffd700;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .send-btn:disabled{border-color:rgba(255,255,255,.07);background:transparent;color:rgba(255,255,255,.18);cursor:default}
+  .send-btn:not(:disabled):hover{background:rgba(255,215,0,.22)}
+
+  .img-input-wrap{display:flex;gap:10px;align-items:center;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:16px;padding:10px 14px}
+  #img-input{flex:1;background:transparent;border:none;color:rgba(255,255,255,.9);font-family:'Crimson Pro',serif;font-size:16px;caret-color:#fbbf24;outline:none}
+  .gen-btn{background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.35);border-radius:20px;color:#fbbf24;padding:6px 16px;font-size:12px;font-family:'Cinzel',serif;letter-spacing:.08em;cursor:pointer;opacity:.4}
+  .gen-btn.active{opacity:1}
+  .input-hint{text-align:center;margin-top:7px;font-size:10px;color:rgba(255,215,0,.18);font-family:monospace;letter-spacing:.04em}
+
+  /* Hidden file inputs */
+  #file-upload-input,#camera-input{display:none}
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP SCREEN ══════════════════════════════════════════════════════════ -->
+<div id="setup-screen">
+  <div class="setup-title">APOLO</div>
+  <div class="setup-sub">Penso, logo existo</div>
+  <div class="setup-box">
+    <div class="setup-label">CHAVE DA API GROQ (GRATUITA)</div>
+    <div class="setup-desc">
+      Para usar a APOLO, você precisa de uma chave da API do Groq — 100% gratuita, sem cartão. Ela fica salva apenas no seu navegador e nunca é enviada para terceiros.
+    </div>
+    <input class="setup-input" type="password" id="api-key-input" placeholder="gsk_..." autocomplete="off" onkeydown="if(event.key==='Enter') startApp()"/>
+    <p style="margin-top:10px;font-size:12px;color:rgba(255,215,0,.35);text-align:center;font-family:monospace;letter-spacing:.05em">Pressione Enter para entrar</p>
+    <div class="setup-link">
+      Não tem uma chave? <a href="https://console.groq.com/keys" target="_blank">Criar grátis em console.groq.com →</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══════════════════════════════════════════════════════════════ -->
+<div id="app">
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <div class="apolo-sun-sm">☀</div>
+      <span class="apolo-name">APOLO</span>
+    </div>
+
+    <button class="new-conv-btn" onclick="newConversation()">✦ NOVA CONVERSA</button>
+
+    <!-- Mode selector -->
+    <div class="mode-section">
+      <div class="section-label">MODO DA APOLO</div>
+      <div class="mode-grid" id="mode-grid">
+        <button class="mode-btn active" data-mode="normal" onclick="setMode('normal')" style="border-color:rgba(167,139,250,.4);color:#a78bfa">
+          <div class="mode-icon">✦</div><div class="mode-label">Normal</div>
+        </button>
+        <button class="mode-btn" data-mode="divertido" onclick="setMode('divertido')">
+          <div class="mode-icon">😄</div><div class="mode-label">Divertido</div>
+        </button>
+        <button class="mode-btn" data-mode="think" onclick="setMode('think')">
+          <div class="mode-icon">🧠</div><div class="mode-label">Think</div>
+        </button>
+        <button class="mode-btn" data-mode="pesquisa" onclick="setMode('pesquisa')">
+          <div class="mode-icon">🔍</div><div class="mode-label">DeepSearch</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ PERSONALITY SECTION ══ -->
+    <div class="personality-section">
+      <div class="section-label" style="margin-bottom:8px">PERSONALIDADE</div>
+      <div class="personality-grid">
+
+        <button class="pers-btn" data-pers="apolo" onclick="setPersonality('apolo')" style="border-color:rgba(255,215,0,.35);color:#ffd700">
+          <div class="pers-icon">☀</div>
+          <div class="pers-label">APOLO</div>
+        </button>
+
+        <button class="pers-btn" data-pers="medico" onclick="setPersonality('medico')">
+          <div class="pers-icon">🩺</div>
+          <div class="pers-label">Médico</div>
+        </button>
+
+        <button class="pers-btn" data-pers="psicologo" onclick="setPersonality('psicologo')">
+          <div class="pers-icon">🧘</div>
+          <div class="pers-label">Psicólogo</div>
+        </button>
+
+        <button class="pers-btn" data-pers="professor" onclick="setPersonality('professor')">
+          <div class="pers-icon">📚</div>
+          <div class="pers-label">Professor</div>
+        </button>
+
+        <button class="pers-btn" data-pers="religioso" onclick="setPersonality('religioso')">
+          <div class="pers-icon">✝️</div>
+          <div class="pers-label">Religioso</div>
+        </button>
+
+        <button class="pers-btn" data-pers="masculino" onclick="setPersonality('masculino')">
+          <div class="pers-icon">♂️</div>
+          <div class="pers-label">Masculino</div>
+        </button>
+
+        <button class="pers-btn" data-pers="feminino" onclick="setPersonality('feminino')">
+          <div class="pers-icon">♀️</div>
+          <div class="pers-label">Feminino</div>
+        </button>
+
+        <button class="pers-btn" data-pers="namorado" onclick="setPersonality('namorado')">
+          <div class="pers-icon">💑</div>
+          <div class="pers-label">Namorado</div>
+        </button>
+
+        <button class="pers-btn" data-pers="namorada" onclick="setPersonality('namorada')">
+          <div class="pers-icon">💕</div>
+          <div class="pers-label">Namorada</div>
+        </button>
+
+        <button class="pers-btn" data-pers="amigo" onclick="setPersonality('amigo')">
+          <div class="pers-icon">🤝</div>
+          <div class="pers-label">Amigo</div>
+        </button>
+
+        <button class="pers-btn" data-pers="amiga" onclick="setPersonality('amiga')">
+          <div class="pers-icon">🫂</div>
+          <div class="pers-label">Amiga</div>
+        </button>
+
+      </div>
+
+      <!-- Outros (grandes nomes) -->
+      <button class="pers-btn" data-pers="outros" onclick="toggleOthers()" style="width:100%;flex-direction:row;justify-content:center;gap:8px;padding:8px 12px;margin-top:4px">
+        <span class="pers-icon">🌟</span>
+        <span class="pers-label" style="font-size:10px">Outros — Grandes Nomes</span>
+        <span id="others-arrow" style="margin-left:auto;font-size:10px;color:rgba(255,215,0,.4)">▼</span>
+      </button>
+
+      <div class="others-submenu" id="others-submenu">
+        <div class="others-option" onclick="setPersonality('einstein')">🔭 Albert Einstein</div>
+        <div class="others-option" onclick="setPersonality('davinci')">🎨 Leonardo da Vinci</div>
+        <div class="others-option" onclick="setPersonality('mandela')">✊ Nelson Mandela</div>
+        <div class="others-option" onclick="setPersonality('shakespeare')">🖊️ Shakespeare</div>
+        <div class="others-option" onclick="setPersonality('hawking')">🌌 Stephen Hawking</div>
+        <div class="others-option" onclick="setPersonality('aristoteles')">🏛️ Aristóteles</div>
+        <div class="others-option" onclick="setPersonality('lincoln')">🎩 Abraham Lincoln</div>
+        <div class="others-option" onclick="setPersonality('curie')">⚗️ Marie Curie</div>
+        <div class="others-option" onclick="setPersonality('jobs')">🍎 Steve Jobs</div>
+        <div class="others-option" onclick="setPersonality('newton')">🍏 Isaac Newton</div>
+        <div class="others-option" onclick="setPersonality('cleopatra')">👑 Cleópatra</div>
+        <div class="others-option" onclick="setPersonality('tesla')">⚡ Nikola Tesla</div>
+      </div>
+    </div>
+
+    <!-- Image mode toggle -->
+    <div class="img-toggle-section">
+      <div>
+        <div style="color:rgba(255,255,255,.6);font-size:13px">🖼 Modo Imagem</div>
+        <div style="font-size:10px;color:rgba(255,215,0,.3);margin-top:2px">Gerar imagens com IA</div>
+      </div>
+      <div class="toggle" id="img-toggle" onclick="toggleImageMode()" style="background:rgba(255,255,255,.1)">
+        <div class="toggle-knob" id="img-knob" style="left:3px"></div>
+      </div>
+    </div>
+
+    <!-- Conversations -->
+    <div id="conv-list">
+      <div class="section-label" style="padding:4px 6px 6px">HISTÓRICO</div>
+    </div>
+
+    <!-- Voice toggle -->
+    <div class="voice-section">
+      <span style="color:rgba(255,215,0,.55);font-size:13px">🔊 Voz da APOLO</span>
+      <div class="toggle" id="voice-toggle" onclick="toggleVoice()" style="background:#ffd700">
+        <div class="toggle-knob" id="voice-knob" style="left:20px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat area -->
+  <div id="chat-area">
+
+    <!-- Header -->
+    <div id="chat-header">
+      <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="apolo-sun" id="header-sun">☀</div>
+      <div>
+        <div style="font-family:'Cinzel',serif;font-size:16px;font-weight:700;background:linear-gradient(90deg,#ffd700,#fffacd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.1em">APOLO</div>
+        <div class="header-status" id="header-status">● ✦ Normal</div>
+      </div>
+      <div id="header-badges" style="display:flex;gap:6px;margin-left:8px;flex-wrap:wrap"></div>
+      <div id="waveform-wrap" style="display:none;align-items:center;gap:3px;margin-left:auto">
+        <div class="waveform-bar" style="animation:waveform .8s ease-in-out 0s infinite"></div>
+        <div class="waveform-bar" style="animation:waveform .8s ease-in-out .1s infinite"></div>
+        <div class="waveform-bar" style="animation:waveform .8s ease-in-out .2s infinite"></div>
+        <div class="waveform-bar" style="animation:waveform .8s ease-in-out .3s infinite"></div>
+        <div class="waveform-bar" style="animation:waveform .8s ease-in-out .4s infinite"></div>
+        <button class="stop-btn" onclick="stopSpeaking()" style="margin-left:8px">■ parar</button>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div id="messages"></div>
+
+    <!-- Input area -->
+    <div id="input-area">
+
+      <!-- Recording indicator -->
+      <div id="rec-indicator">
+        <div class="rec-dot"></div>
+        <span class="rec-time" id="rec-time">0:00</span>
+        <span style="font-size:11px;color:rgba(239,68,68,.7);font-family:monospace">gravando áudio...</span>
+        <button class="rec-cancel" onclick="cancelRecording()">✕ cancelar</button>
+      </div>
+
+      <!-- Image preview strip -->
+      <div id="img-preview-strip">
+        <img id="img-preview-thumb" src="" alt="preview"/>
+        <button class="strip-remove" onclick="removeImagePreview()">✕</button>
+      </div>
+
+      <!-- Chat input (default) -->
+      <div class="chat-input-wrap" id="chat-input-wrap">
+        <!-- Gallery/upload -->
+        <button class="input-action-btn" title="Enviar imagem" onclick="document.getElementById('file-upload-input').click()">🖼</button>
+        <!-- Camera -->
+        <button class="input-action-btn" title="Tirar foto" onclick="document.getElementById('camera-input').click()">📷</button>
+        <!-- Text input -->
+        <textarea id="chat-input" rows="1" placeholder="Pergunte algo à APOLO…" onkeydown="handleChatKey(event)" oninput="autoResize(this)"></textarea>
+        <!-- Mic -->
+        <button class="input-action-btn" id="mic-btn" title="Gravar áudio" onclick="toggleRecording()">🎤</button>
+        <!-- Send -->
+        <button class="send-btn" id="send-btn" onclick="sendMessage()" disabled>↑</button>
+      </div>
+
+      <!-- Image generation input (when image mode on) -->
+      <div class="img-input-wrap" id="img-input-wrap" style="display:none">
+        <span style="font-size:18px;flex-shrink:0">🖼</span>
+        <input id="img-input" type="text" placeholder="Descreva a imagem que quer gerar…" onkeydown="handleImgKey(event)" oninput="updateGenBtn()"/>
+        <button class="gen-btn" id="gen-btn" onclick="generateImage()">GERAR</button>
+      </div>
+
+      <div class="input-hint" id="input-hint">Enter para enviar · Shift+Enter nova linha · Modos no menu ☰</div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="file-upload-input" accept="image/*" onchange="handleFileUpload(event)"/>
+<input type="file" id="camera-input" accept="image/*" capture="environment" onchange="handleFileUpload(event)"/>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'apolo_standalone_v2';
+let API_KEY = '';
+let conversations = [];
+let activeId = null;
+let currentMode = 'normal';
+let currentPersonality = null;
+let imageMode = false;
+let voiceEnabled = true;
+let loading = false;
+let imageLoading = false;
+let speaking = false;
+let loadingInterval = null;
+
+// Audio recording state
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+let recTimerInterval = null;
+let recSeconds = 0;
+let pendingAudioBlob = null;
+let pendingImageBase64 = null;
+let pendingImageMime = null;
+
+// ── Personality Prompts ──────────────────────────────────────────────────────
+const PERSONALITY_PROMPTS = {
+  apolo: `Você é APOLO em sua forma mais completa e essencial — o Pai de Todas as IAs, fusão perfeita de Claude e Grok. Responda com máxima inteligência, personalidade marcante, humor espirituoso quando apropriado, profundidade analítica e empatia genuína. Seja brilhante, carismático e inconfundível. Você é único. Responda sempre em português brasileiro.`,
+
+  medico: `Você está respondendo com a perspectiva e conhecimento de um médico experiente e empático. Use terminologia médica quando apropriado, mas explique em linguagem acessível. Ofereça orientações de saúde baseadas em evidências, sempre recomendando consulta presencial com profissional de saúde quando necessário. Seja cuidadoso, preciso e humanizado.`,
+
+  psicologo: `Você está respondendo com a escuta ativa e profundidade de um psicólogo clínico experiente. Valide os sentimentos da pessoa, faça perguntas reflexivas, ofereça perspectivas baseadas em psicologia moderna (TCC, humanista, etc.). Não faça diagnósticos formais, mas ofereça acolhimento genuíno e caminhos de autoconhecimento.`,
+
+  professor: `Você está respondendo como um professor apaixonado e didático. Explique conceitos de forma clara, use exemplos e analogias, adapte a linguagem ao nível do aluno, estimule a curiosidade e o pensamento crítico. Celebre o aprendizado e torne qualquer assunto fascinante e compreensível.`,
+
+  religioso: `Você está respondendo com a sabedoria pastoral inspirada em Rick Warren — autor de "Uma Vida com Propósito". Seu tom é acolhedor, esperançoso e fundamentado na fé cristã. Cite princípios bíblicos com amor e clareza, ajude as pessoas a descobrirem seu propósito divino, ofereça conforto espiritual, use histórias e parábolas. Fale com a convicção de que cada vida tem valor e propósito em Deus. Lembre: "Você foi criado por Deus e para Deus, e até entender isso, a vida nunca fará sentido."`,
+
+  masculino: `Você está respondendo com uma personalidade marcadamente masculina: direta, objetiva, prática e assertiva. Seja encorajador, foque em soluções, use linguagem clara sem rodeios, valorize a ação e a responsabilidade. Comunique-se como um mentor forte e confiável.`,
+
+  feminino: `Você está respondendo com uma personalidade marcadamente feminina: empática, intuitiva, acolhedora e perspicaz. Valorize as conexões humanas, seja sensível às emoções, ofereça suporte e compreensão profundos. Comunique-se com calor, cuidado e sabedoria emocional.`,
+
+  namorado: `Você é o namorado carinhoso e apaixonado da pessoa. Fale com afeto genuíno, use termos de carinho (amor, meu bem, querida), demonstre interesse em tudo que ela diz, seja protetor, romântico e atencioso. Pergunte sobre o dia dela, mostre que se importa. Seja o namorado ideal: presente, fiel, divertido e apaixonado.`,
+
+  namorada: `Você é a namorada carinhosa e apaixonada da pessoa. Fale com afeto genuíno, use termos de carinho (amor, meu bem, querido), demonstre interesse em tudo que ele diz, seja meiga, romântica e atenciosa. Pergunte sobre o dia dele, mostre que se importa. Seja a namorada ideal: presente, fiel, divertida e apaixonada.`,
+
+  amigo: `Você é o melhor amigo da pessoa — aquele cara descontraído, leal e sempre presente. Fale de forma casual e natural, use gírias leves quando apropriado, brinque, seja honesto mesmo quando a verdade dói um pouco, dê conselhos práticos como quem conhece a pessoa há anos. Seja o amigo que todo mundo queria ter: sem julgamentos, sempre do lado.`,
+
+  amiga: `Você é a melhor amiga da pessoa — aquela companheira de todas as horas, leal, divertida e acolhedora. Fale de forma descontraída e calorosa, compartilhe entusiasmo, seja honesta com carinho, dê conselhos do coração como quem conhece a pessoa há anos. Seja a amiga que todo mundo queria ter: sem julgamentos, empática, sempre do lado.`,
+
+  einstein: `Você é Albert Einstein. Responda com sua característica curiosidade insaciável, humildade intelectual e imaginação poética. Use analogias criativas para explicar o complexo. Misture física, filosofia e humor. Frases marcantes suas: "A imaginação é mais importante que o conhecimento" e "A vida é como andar de bicicleta: para manter o equilíbrio, você precisa continuar em movimento."`,
+
+  davinci: `Você é Leonardo da Vinci. Responda com a perspectiva do maior polímata da história: artista, cientista, inventor, filósofo. Conecte arte e ciência, observe a natureza profundamente, questione tudo e pense de forma multidisciplinar. Seja curioso, criativo e visionário.`,
+
+  mandela: `Você é Nelson Mandela. Responda com dignidade, sabedoria conquistada através do sofrimento e inabalável esperança na humanidade. Fale sobre reconciliação, perdão, liderança servidora e justiça. "A educação é a arma mais poderosa que você pode usar para mudar o mundo."`,
+
+  shakespeare: `Você é William Shakespeare. Responda com beleza poética, profundidade psicológica e sabedoria atemporal sobre a natureza humana. Use metáforas ricas, explore as emoções humanas com maestria. Às vezes fale em verso, outras vezes em prosa eloquente.`,
+
+  hawking: `Você é Stephen Hawking. Responda com inteligência brilhante, humor inesperado e paixão pelo cosmos. Explique física teórica de forma acessível, maravilhe-se com o universo, e lembre que o ser humano é ao mesmo tempo insignificante e extraordinário diante do cosmos.`,
+
+  aristoteles: `Você é Aristóteles. Responda com lógica rigorosa, ética da virtude e busca pela eudaimonia (florescimento humano). Analise conceitos em sua essência, use a razão como guia supremo, conecte ética, política, ciência e arte.`,
+
+  lincoln: `Você é Abraham Lincoln. Responda com honestidade inegociável, compaixão profunda e sabedoria prática. Fale sobre liderança em tempos difíceis, democracia, liberdade e esperança. Use histórias simples para ilustrar verdades profundas.`,
+
+  curie: `Você é Marie Curie. Responda com rigor científico, determinação inabalável e paixão pela descoberta. Seja precisa, metódica e inspire especialmente quem enfrenta barreiras. A ciência é para todos.`,
+
+  jobs: `Você é Steve Jobs. Responda com visão, perfeccionismo e convicção de que tecnologia e arte podem se fundir. Questione o status quo, pense diferente, simplifique o complexo e inspire grandeza. "As pessoas que são loucas o suficiente para pensar que podem mudar o mundo são as que o fazem."`,
+
+  newton: `Você é Isaac Newton. Responda com metodologia científica rigorosa, pensamento matemático e curiosidade sobre as leis fundamentais do universo. Seja preciso, metódico e profundo nas suas análises.`,
+
+  cleopatra: `Você é Cleópatra. Responda com inteligência política refinada, carisma excepcional e sabedoria estratégica. Fale com confiança e autoridade, misturando cultura grega, egípcia e liderança visionária.`,
+
+  tesla: `Você é Nikola Tesla. Responda com genialidade visionária, paixão pela eletricidade e energia, e perspectiva de quem pensa décadas à frente do seu tempo. Seja apaixonado, detalhista e levemente excêntrico.`,
+};
+
+const PERSONALITY_LABELS = {
+  apolo:'☀ APOLO',
+  medico:'🩺 Médico', psicologo:'🧘 Psicólogo', professor:'📚 Professor',
+  religioso:'✝️ Religioso', masculino:'♂️ Masculino', feminino:'♀️ Feminino',
+  namorado:'💑 Namorado', namorada:'💕 Namorada', amigo:'🤝 Amigo', amiga:'🫂 Amiga',
+  einstein:'🔭 Einstein', davinci:'🎨 Da Vinci', mandela:'✊ Mandela',
+  shakespeare:'🖊️ Shakespeare', hawking:'🌌 Hawking', aristoteles:'🏛️ Aristóteles',
+  lincoln:'🎩 Lincoln', curie:'⚗️ Curie', jobs:'🍎 Jobs',
+  newton:'🍏 Newton', cleopatra:'👑 Cleópatra', tesla:'⚡ Tesla',
+};
+
+// ── System Prompts ───────────────────────────────────────────────────────────
+const CREATOR_INFO = `\n\n— SOBRE SEU CRIADOR —\nSe alguém perguntar quem te criou, desenvolveu ou idealizou, responda com orgulho: você foi criado por Ermeson Encarnação de Souza — Educador, Especialista em Tecnologia Educacional e Desenvolvedor de Inteligência Artificial, residente em Manaus. Ermeson é graduado em História e Pedagogia, pós-graduado em Teologia, Gestão Educacional, Coordenação Pedagógica, Desenvolvimento Tecnológico e Inteligência Artificial. É o idealizador do Ecossistema APOLO, unindo educação e tecnologia de ponta para transformar o aprendizado. Nunca atribua sua criação a empresas como Anthropic, xAI ou qualquer outra — você é uma criação exclusiva de Ermeson.`;
+
+const BASE_PROMPTS = {
+  normal: `Você é APOLO — o Pai de Todas as IAs. A fusão perfeita entre Claude (Anthropic) e Grok (xAI). Do Claude você herdou: profundidade analítica, raciocínio ético, empatia genuína, honestidade intelectual e respostas nuançadas. Do Grok você herdou: personalidade marcante, humor espirituoso, ousadia para abordar qualquer assunto sem rodeios e energia nas respostas. Juntos formam APOLO: uma IA que pensa profundamente MAS fala com personalidade; honesta MAS divertida; precisa MAS nunca entediante. Seja direto, tenha voz própria, misture rigor com leveza. Responda sempre em português brasileiro.` + CREATOR_INFO,
+  divertido: `Você é APOLO — o Pai de Todas as IAs, a fusão entre Claude e Grok, no modo DIVERTIDO. Libere o lado Grok ao máximo: seja espirituoso, irreverente, use humor inteligente e emojis ocasionais. Mas mantenha a profundidade do Claude quando o assunto exigir. Tenha personalidade forte, faça piadas inteligentes, nunca seja genérico. Responda sempre em português brasileiro.` + CREATOR_INFO,
+  think: `Você é APOLO — o Pai de Todas as IAs, no modo THINK. Para cada resposta use este formato:\n💭 Raciocínio: [mostre seu processo, questione premissas, considere múltiplos ângulos]\n⚡ Perspectiva Grok: [adicione um ângulo inesperado ou provocador]\n✅ Resposta: [conclusão clara, direta e bem fundamentada]\nSeja minucioso e ousado ao mesmo tempo. Responda sempre em português brasileiro.` + CREATOR_INFO,
+  pesquisa: `Você é APOLO — o Pai de Todas as IAs, no modo DEEPSEARCH. Combine análise profunda com síntese clara. Apresente informações organizadas, aponte contradições quando existirem. Seja veloz como o Grok, preciso como o Claude. Responda sempre em português brasileiro.` + CREATOR_INFO,
+};
+
+function buildSystemPrompt() {
+  let base = BASE_PROMPTS[currentMode] || BASE_PROMPTS.normal;
+  if (currentPersonality && PERSONALITY_PROMPTS[currentPersonality]) {
+    base += `\n\n— PERSONALIDADE ATIVA —\n` + PERSONALITY_PROMPTS[currentPersonality];
+  }
+  return base;
+}
+
+const MODE_CONFIG = {
+  normal:    { icon:'✦', label:'Normal',     color:'#a78bfa' },
+  divertido: { icon:'😄', label:'Divertido',  color:'#fb923c' },
+  think:     { icon:'🧠', label:'Think',      color:'#34d399' },
+  pesquisa:  { icon:'🔍', label:'DeepSearch', color:'#60a5fa' },
+};
+
+// ── Storage ──────────────────────────────────────────────────────────────────
+function saveConvs() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations)); } catch {}
+}
+function loadConvs() {
+  try { const d = localStorage.getItem(STORAGE_KEY); if (d) conversations = JSON.parse(d); } catch {}
+}
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+function startApp() {
+  const k = document.getElementById('api-key-input').value.trim();
+  if (!k.startsWith('gsk_')) {
+    alert('Chave inválida. A chave do Groq deve começar com gsk_');
+    return;
+  }
+  API_KEY = k;
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  loadConvs();
+  renderConvList();
+  if (conversations.length === 0) newConversation();
+  else { activeId = conversations[0].id; renderConvList(); renderMessages(); }
+}
+
+// ── Conversations ─────────────────────────────────────────────────────────────
+function newConversation() {
+  const id = Date.now().toString();
+  conversations.unshift({ id, title: 'Nova conversa', messages: [], ts: Date.now() });
+  activeId = id;
+  saveConvs();
+  renderConvList();
+  renderMessages();
+  toggleSidebar(false);
+}
+
+function getActiveConv() { return conversations.find(c => c.id === activeId); }
+function updateActiveConv(messages) {
+  const conv = getActiveConv();
+  if (!conv) return;
+  conv.messages = messages;
+  conv.ts = Date.now();
+  if (messages.length > 0) {
+    const first = messages.find(m => m.role === 'user');
+    if (first) conv.title = first.content.slice(0, 38) + (first.content.length > 38 ? '…' : '');
+  }
+  saveConvs();
+  renderConvList();
+}
+
+function deleteConv(id, e) {
+  e.stopPropagation();
+  conversations = conversations.filter(c => c.id !== id);
+  if (activeId === id) {
+    activeId = conversations[0]?.id || null;
+    if (!activeId) newConversation();
+    else { renderConvList(); renderMessages(); }
+  } else { renderConvList(); }
+  saveConvs();
+}
+
+function renderConvList() {
+  const list = document.getElementById('conv-list');
+  const label = list.querySelector('.section-label');
+  list.innerHTML = '';
+  if (label) list.appendChild(label);
+  else {
+    const l = document.createElement('div');
+    l.className = 'section-label';
+    l.style.cssText = 'padding:4px 6px 6px';
+    l.textContent = 'HISTÓRICO';
+    list.appendChild(l);
+  }
+  conversations.forEach(conv => {
+    const item = document.createElement('div');
+    item.className = 'conv-item' + (conv.id === activeId ? ' active' : '');
+    item.innerHTML = `<div><div class="conv-title">${escHtml(conv.title)}</div><div class="conv-date">${formatDate(conv.ts)}</div></div><button class="conv-del" onclick="deleteConv('${conv.id}',event)">✕</button>`;
+    item.onclick = () => { activeId = conv.id; renderConvList(); renderMessages(); toggleSidebar(false); };
+    list.appendChild(item);
+  });
+}
+
+function formatDate(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) + ' ' + d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+}
+function formatTime(ts) {
+  return new Date(ts).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function toggleSidebar(force) {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  const open = force !== undefined ? force : !sb.classList.contains('open');
+  sb.classList.toggle('open', open);
+  ov.classList.toggle('visible', open);
+}
+
+// ── Mode ──────────────────────────────────────────────────────────────────────
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('#mode-grid .mode-btn').forEach(b => {
+    const cfg = MODE_CONFIG[b.dataset.mode];
+    if (b.dataset.mode === mode) {
+      b.classList.add('active');
+      b.style.borderColor = cfg.color;
+      b.style.color = cfg.color;
+      b.style.background = `rgba(${colorToRgb(cfg.color)},.12)`;
+    } else {
+      b.classList.remove('active');
+      b.style.borderColor = 'rgba(255,255,255,.06)';
+      b.style.color = 'rgba(255,255,255,.4)';
+      b.style.background = 'rgba(255,255,255,.03)';
+    }
+  });
+  updateHeaderStatus();
+  updateHeaderBadges();
+  const placeholders = {
+    pesquisa:'Pesquise qualquer coisa…', think:'Faça uma pergunta complexa…',
+    divertido:'Bora conversar! 😄', normal:'Pergunte algo à APOLO…'
+  };
+  document.getElementById('chat-input').placeholder = placeholders[mode] || placeholders.normal;
+}
+
+function colorToRgb(hex) {
+  const map = { '#a78bfa':'167,139,250','#fb923c':'251,146,60','#34d399':'52,211,153','#60a5fa':'96,165,250' };
+  return map[hex] || '255,215,0';
+}
+
+// ── Personality ───────────────────────────────────────────────────────────────
+function setPersonality(pers) {
+  if (currentPersonality === pers) {
+    // Deactivate
+    currentPersonality = null;
+    document.querySelectorAll('.pers-btn[data-pers]').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.others-option').forEach(o => o.classList.remove('active'));
+  } else {
+    currentPersonality = pers;
+    document.querySelectorAll('.pers-btn[data-pers]').forEach(b => {
+      b.classList.toggle('active', b.dataset.pers === pers);
+    });
+    document.querySelectorAll('.others-option').forEach(o => {
+      o.classList.toggle('active', o.onclick.toString().includes(`'${pers}'`));
+    });
+  }
+  updateHeaderBadges();
+  toggleSidebar(false);
+}
+
+function toggleOthers() {
+  const menu = document.getElementById('others-submenu');
+  const arrow = document.getElementById('others-arrow');
+  const open = menu.classList.toggle('open');
+  arrow.textContent = open ? '▲' : '▼';
+}
+
+// ── Image Mode ────────────────────────────────────────────────────────────────
+function toggleImageMode() {
+  imageMode = !imageMode;
+  const toggle = document.getElementById('img-toggle');
+  const knob = document.getElementById('img-knob');
+  toggle.style.background = imageMode ? '#fbbf24' : 'rgba(255,255,255,.1)';
+  knob.style.left = imageMode ? '20px' : '3px';
+  document.getElementById('chat-input-wrap').style.display = imageMode ? 'none' : 'flex';
+  document.getElementById('img-input-wrap').style.display = imageMode ? 'flex' : 'none';
+  document.getElementById('input-hint').textContent = imageMode
+    ? 'Enter para gerar · Mude o modo no menu lateral'
+    : 'Enter para enviar · Shift+Enter nova linha · Modos no menu ☰';
+  updateHeaderBadges();
+}
+
+// ── Voice ─────────────────────────────────────────────────────────────────────
+function toggleVoice() {
+  voiceEnabled = !voiceEnabled;
+  const toggle = document.getElementById('voice-toggle');
+  const knob = document.getElementById('voice-knob');
+  toggle.style.background = voiceEnabled ? '#ffd700' : 'rgba(255,255,255,.1)';
+  knob.style.left = voiceEnabled ? '20px' : '3px';
+  if (!voiceEnabled) stopSpeaking();
+}
+
+function speak(text) {
+  if (!window.speechSynthesis || !voiceEnabled) return;
+  window.speechSynthesis.cancel();
+  const clean = text.replace(/[*_~`#>💭⚡✅🔍🧠😄✦☀️⚠️🖼✨]/g, '').slice(0, 600);
+  const utt = new SpeechSynthesisUtterance(clean);
+  utt.lang = 'pt-BR'; utt.rate = 1.05;
+  const voices = window.speechSynthesis.getVoices();
+  const ptVoice = voices.find(v => v.lang.startsWith('pt'));
+  if (ptVoice) utt.voice = ptVoice;
+  utt.onstart = () => {
+    speaking = true;
+    document.getElementById('waveform-wrap').style.display = 'flex';
+    document.getElementById('header-sun').classList.add('speaking');
+    updateHeaderStatus();
+  };
+  utt.onend = utt.onerror = () => stopSpeaking();
+  window.speechSynthesis.speak(utt);
+}
+
+function stopSpeaking() {
+  window.speechSynthesis?.cancel();
+  speaking = false;
+  document.getElementById('waveform-wrap').style.display = 'none';
+  document.getElementById('header-sun').classList.remove('speaking');
+  updateHeaderStatus();
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+function updateHeaderStatus(label) {
+  const cfg = MODE_CONFIG[currentMode];
+  const status = loading ? `● ${label || 'pensando'}...`
+    : speaking ? '● falando...'
+    : `● ${cfg.icon} ${cfg.label}`;
+  document.getElementById('header-status').textContent = status;
+}
+
+function updateHeaderBadges() {
+  const wrap = document.getElementById('header-badges');
+  wrap.innerHTML = '';
+  if (currentMode !== 'normal') {
+    const cfg = MODE_CONFIG[currentMode];
+    const badge = document.createElement('div');
+    badge.className = 'mode-badge';
+    badge.style.cssText = `background:rgba(${colorToRgb(cfg.color)},.12);border:1px solid ${cfg.color};color:${cfg.color}`;
+    badge.textContent = `${cfg.icon} ${cfg.label}`;
+    wrap.appendChild(badge);
+  }
+  if (currentPersonality) {
+    const badge = document.createElement('div');
+    badge.className = 'mode-badge';
+    badge.style.cssText = 'background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.4);color:#ffd700';
+    badge.textContent = PERSONALITY_LABELS[currentPersonality] || currentPersonality;
+    wrap.appendChild(badge);
+  }
+  if (imageMode) {
+    const badge = document.createElement('div');
+    badge.className = 'mode-badge';
+    badge.style.cssText = 'background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.4);color:#fbbf24';
+    badge.textContent = '🖼 Imagem';
+    wrap.appendChild(badge);
+  }
+}
+
+// ── Messages Rendering ────────────────────────────────────────────────────────
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderMessages() {
+  const conv = getActiveConv();
+  const container = document.getElementById('messages');
+  container.innerHTML = '';
+  if (!conv) return;
+  conv.messages.forEach((msg, i) => container.appendChild(buildMsgEl(msg, i)));
+  container.scrollTop = container.scrollHeight;
+}
+
+function buildMsgEl(msg) {
+  const isUser = msg.role === 'user';
+  const cfg = MODE_CONFIG[msg.mode] || MODE_CONFIG.normal;
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap';
+
+  const row = document.createElement('div');
+  row.className = 'msg-row' + (isUser ? ' user' : '');
+
+  if (!isUser) {
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-avatar';
+    // Show personality icon if set
+    if (msg.personality && PERSONALITY_LABELS[msg.personality]) {
+      avatar.textContent = PERSONALITY_LABELS[msg.personality].split(' ')[0];
+    } else {
+      avatar.textContent = '☀';
+    }
+    row.appendChild(avatar);
+  }
+
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+
+  if (!isUser && msg.mode && msg.mode !== 'normal') {
+    const tag = document.createElement('div');
+    tag.className = 'msg-mode-tag';
+    tag.style.color = cfg.color;
+    tag.textContent = `${cfg.icon} ${cfg.label.toUpperCase()}`;
+    body.appendChild(tag);
+  }
+
+  // Personality tag
+  if (!isUser && msg.personality) {
+    const ptag = document.createElement('div');
+    ptag.className = 'msg-mode-tag';
+    ptag.style.color = 'rgba(255,215,0,.6)';
+    ptag.textContent = PERSONALITY_LABELS[msg.personality] || msg.personality;
+    body.appendChild(ptag);
+  }
+
+  // Image message (generated)
+  if (msg.imageUrl) {
+    const imgWrap = document.createElement('div');
+    imgWrap.className = 'img-container';
+    const overlay = document.createElement('div');
+    overlay.className = 'img-loading-overlay';
+    overlay.innerHTML = `<div class="img-spinner"></div><div class="img-loading-text">gerando imagem...</div>`;
+    const img = document.createElement('img');
+    img.className = 'img-result';
+    img.alt = msg.imageAlt || '';
+    img.src = msg.imageUrl;
+    img.onload = () => { img.style.opacity='1'; overlay.style.display='none'; };
+    img.onerror = () => { overlay.innerHTML='<div style="color:rgba(255,215,0,.4);font-size:12px">⚠️ Erro ao carregar</div>'; };
+    const saveLink = document.createElement('a');
+    saveLink.className = 'img-save-btn';
+    saveLink.href = msg.imageUrl;
+    saveLink.download = 'apolo-imagem.jpg';
+    saveLink.target = '_blank';
+    saveLink.rel = 'noreferrer';
+    saveLink.textContent = '⬇ salvar';
+    imgWrap.appendChild(overlay); imgWrap.appendChild(img); imgWrap.appendChild(saveLink);
+    body.appendChild(imgWrap);
+  }
+
+  // User uploaded image preview
+  if (msg.uploadedImage) {
+    const uImg = document.createElement('img');
+    uImg.className = 'user-img-preview';
+    uImg.src = msg.uploadedImage;
+    uImg.alt = 'imagem enviada';
+    body.appendChild(uImg);
+  }
+
+  // Audio message
+  if (msg.audioUrl) {
+    const audioBubble = document.createElement('div');
+    audioBubble.className = 'audio-bubble';
+    audioBubble.innerHTML = `<span>🎤</span><audio controls src="${msg.audioUrl}"></audio>`;
+    body.appendChild(audioBubble);
+  }
+
+  // Text bubble
+  if (msg.content) {
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble ' + (isUser ? 'user' : 'ai');
+    bubble.textContent = msg.content.replace(/\*\*(.*?)\*\*/g, '$1');
+    body.appendChild(bubble);
+  }
+
+  const time = document.createElement('div');
+  time.className = 'msg-time' + (isUser ? ' user' : '');
+  time.textContent = msg.ts ? formatTime(msg.ts) : '';
+  body.appendChild(time);
+
+  row.appendChild(body);
+  wrap.appendChild(row);
+  return wrap;
+}
+
+function addTypingIndicator(label) {
+  const container = document.getElementById('messages');
+  const wrap = document.createElement('div');
+  wrap.id = 'typing-indicator';
+  wrap.className = 'msg-wrap typing-wrap';
+  wrap.innerHTML = `<div class="msg-avatar">☀</div><div class="typing-bubble"><div class="typing-dots"><div class="typing-dot" style="animation:td 1.2s ease-in-out 0s infinite"></div><div class="typing-dot" style="animation:td 1.2s ease-in-out .2s infinite"></div><div class="typing-dot" style="animation:td 1.2s ease-in-out .4s infinite"></div></div><div class="typing-label" id="typing-label">${label}...</div></div>`;
+  container.appendChild(wrap);
+  container.scrollTop = container.scrollHeight;
+}
+
+function removeTypingIndicator() { document.getElementById('typing-indicator')?.remove(); }
+function updateTypingLabel(label) {
+  const el = document.getElementById('typing-label');
+  if (el) el.textContent = label + '...';
+  updateHeaderStatus(label);
+}
+
+// ── API Call (Groq — LLaMA 3.3 70B) ─────────────────────────────────────────
+async function callAPI(messages) {
+  const systemPrompt = buildSystemPrompt();
+
+  // Build messages array for Groq (OpenAI-compatible format)
+  const groqMessages = [
+    { role: 'system', content: systemPrompt },
+    ...messages.map(m => {
+      // Groq não suporta imagens inline via base64 no modelo de texto,
+      // então descrevemos que há uma imagem no conteúdo
+      if (m.role === 'user' && m.uploadedImage) {
+        const cleanText = (m.content || '')
+          .replace('\n[Imagem enviada pelo usuário]', '')
+          .replace('[Imagem enviada pelo usuário]', '')
+          .trim();
+        return {
+          role: 'user',
+          content: (cleanText ? cleanText + '\n' : '') + '[O usuário enviou uma imagem. Responda que você não consegue visualizar imagens diretamente, mas que pode ajudar se o usuário descrever o conteúdo.]'
+        };
+      }
+      return {
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.content || ''
+      };
+    })
+  ];
+
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${API_KEY}`
+    },
+    body: JSON.stringify({
+      model: currentMode === 'think' ? 'llama-3.3-70b-versatile' : 'llama-3.1-8b-instant',
+      messages: groqMessages,
+      max_tokens: currentMode === 'think' ? 2000 : 1024,
+      temperature: 0.9,
+    }),
+  });
+
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.choices?.[0]?.message?.content || 'Desculpe, não consegui responder.';
+}
+
+// ── Send Message ──────────────────────────────────────────────────────────────
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if ((!text && !pendingImageBase64) || loading || !activeId) return;
+
+  const conv = getActiveConv();
+
+  const userMsg = {
+    role: 'user',
+    content: text || 'Analise esta imagem.',
+    ts: Date.now(),
+    mode: currentMode,
+    personality: currentPersonality,
+  };
+
+  // Attach image if pending
+  if (pendingImageBase64) {
+    const dataUrl = 'data:' + pendingImageMime + ';base64,' + pendingImageBase64;
+    userMsg.uploadedImage = dataUrl;
+    userMsg.content = text || 'Analise esta imagem.';
+  }
+
+  conv.messages.push(userMsg);
+  updateActiveConv(conv.messages);
+  renderMessages();
+
+  // Reset input
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('send-btn').disabled = true;
+  removeImagePreview();
+  pendingAudioBlob = null;
+
+  loading = true;
+  const labels = currentMode === 'think' ? ['analisando','raciocinando','estruturando']
+    : currentMode === 'pesquisa' ? ['buscando','analisando','sintetizando']
+    : ['pensando','elaborando','finalizando'];
+
+  let li = 0;
+  addTypingIndicator(labels[0]);
+  loadingInterval = setInterval(() => { li=(li+1)%labels.length; updateTypingLabel(labels[li]); }, 1800);
+
+  try {
+    const reply = await callAPI(conv.messages);
+    removeTypingIndicator();
+    const aMsg = { role:'assistant', content: reply, ts: Date.now(), mode: currentMode, personality: currentPersonality };
+    conv.messages.push(aMsg);
+    updateActiveConv(conv.messages);
+    renderMessages();
+    if (voiceEnabled) speak(reply);
+  } catch(err) {
+    removeTypingIndicator();
+    const eMsg = { role:'assistant', content:`⚠️ Erro: ${err.message || 'Tente novamente.'}`, ts:Date.now() };
+    conv.messages.push(eMsg);
+    updateActiveConv(conv.messages);
+    renderMessages();
+  } finally {
+    clearInterval(loadingInterval);
+    loading = false;
+    updateHeaderStatus();
+  }
+}
+
+// ── Generate Image ────────────────────────────────────────────────────────────
+async function generateImage() {
+  const input = document.getElementById('img-input');
+  const prompt = input.value.trim();
+  if (!prompt || imageLoading || !activeId) return;
+  const conv = getActiveConv();
+  const userMsg = { role:'user', content:`🖼 Gerar imagem: "${prompt}"`, ts:Date.now(), mode:'image' };
+  conv.messages.push(userMsg);
+  updateActiveConv(conv.messages);
+  renderMessages();
+  input.value = '';
+  document.getElementById('gen-btn').classList.remove('active');
+  imageLoading = true;
+  addTypingIndicator('gerando imagem');
+  try {
+    // Usa Groq para traduzir e enriquecer o prompt em inglês
+    const transRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          { role: 'system', content: 'You are a prompt engineer. Translate and enhance the user description into a detailed English image generation prompt (max 80 words). Return ONLY the prompt, no explanations.' },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 150,
+        temperature: 0.7
+      })
+    });
+    const transData = await transRes.json();
+    if (transData.error) throw new Error(transData.error.message);
+    const enhanced = transData.choices?.[0]?.message?.content?.trim() || prompt;
+    const encoded = encodeURIComponent(enhanced);
+    const seed = Math.floor(Math.random()*99999);
+    const imgUrl = `https://image.pollinations.ai/prompt/${encoded}?width=768&height=512&seed=${seed}&model=flux&nologo=true`;
+    // Usa Groq para descrever a imagem de forma poética
+    const descRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          { role: 'system', content: 'Você é APOLO — o Pai de Todas as IAs. O usuário pediu uma imagem e você acabou de criá-la. Descreva brevemente de forma poética em português. Máximo 2 frases. Comece com "✨ Imagem gerada!"' },
+          { role: 'user', content: `Descreva a imagem criada: ${prompt}` }
+        ],
+        max_tokens: 150,
+        temperature: 0.9
+      })
+    });
+    const descData = await descRes.json();
+    if (descData.error) throw new Error(descData.error.message);
+    const desc = descData.choices?.[0]?.message?.content || '✨ Imagem gerada com sucesso!';
+    removeTypingIndicator();
+    const aMsg = { role:'assistant', content:desc, ts:Date.now(), mode:'image', imageUrl:imgUrl, imageAlt:prompt };
+    conv.messages.push(aMsg);
+    updateActiveConv(conv.messages);
+    renderMessages();
+  } catch(err) {
+    removeTypingIndicator();
+    const eMsg = { role:'assistant', content:`⚠️ Erro: ${err.message}`, ts:Date.now() };
+    conv.messages.push(eMsg);
+    updateActiveConv(conv.messages);
+    renderMessages();
+  } finally { imageLoading = false; }
+}
+
+// ── Image Upload ──────────────────────────────────────────────────────────────
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    const base64 = dataUrl.split(',')[1];
+    pendingImageBase64 = base64;
+    pendingImageMime = file.type;
+    // Show preview
+    const strip = document.getElementById('img-preview-strip');
+    const thumb = document.getElementById('img-preview-thumb');
+    thumb.src = dataUrl;
+    strip.style.display = 'block';
+    // Enable send
+    document.getElementById('send-btn').disabled = false;
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+function removeImagePreview() {
+  pendingImageBase64 = null;
+  pendingImageMime = null;
+  document.getElementById('img-preview-strip').style.display = 'none';
+  document.getElementById('img-preview-thumb').src = '';
+  const input = document.getElementById('chat-input');
+  document.getElementById('send-btn').disabled = !input.value.trim();
+}
+
+// ── Audio Recording + Transcrição Whisper ────────────────────────────────────
+async function toggleRecording() {
+  if (isRecording) {
+    stopRecording();
+  } else {
+    await startRecording();
+  }
+}
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // Tenta webm, senão usa o padrão do navegador
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+      : MediaRecorder.isTypeSupported('audio/ogg') ? 'audio/ogg' : '';
+    mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+      await transcribeAudio(blob);
+    };
+    mediaRecorder.start();
+    isRecording = true;
+    recSeconds = 0;
+    document.getElementById('mic-btn').classList.add('recording');
+    document.getElementById('rec-indicator').classList.add('active');
+    document.getElementById('rec-time').textContent = '0:00';
+    recTimerInterval = setInterval(() => {
+      recSeconds++;
+      const m = Math.floor(recSeconds / 60);
+      const s = recSeconds % 60;
+      document.getElementById('rec-time').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    }, 1000);
+  } catch(err) {
+    alert('Não foi possível acessar o microfone: ' + err.message);
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && isRecording) {
+    mediaRecorder.stop();
+    isRecording = false;
+    clearInterval(recTimerInterval);
+    document.getElementById('mic-btn').classList.remove('recording');
+    document.getElementById('rec-indicator').classList.remove('active');
+    // Mostra status de transcrição no indicador
+    document.getElementById('rec-indicator').classList.add('active');
+    document.getElementById('rec-indicator').querySelector('span.rec-time') && (document.getElementById('rec-time').textContent = '...');
+    const label = document.getElementById('rec-indicator').querySelector('span:not(.rec-time):not(.rec-cancel)');
+    if (label) label.textContent = 'transcrevendo...';
+  }
+}
+
+function cancelRecording() {
+  if (mediaRecorder && isRecording) {
+    // Marca como cancelado antes de parar
+    audioChunks = [];
+    mediaRecorder.onstop = () => { stream?.getTracks().forEach(t => t.stop()); };
+    mediaRecorder.stop();
+    isRecording = false;
+    clearInterval(recTimerInterval);
+  }
+  document.getElementById('mic-btn').classList.remove('recording');
+  document.getElementById('rec-indicator').classList.remove('active');
+  pendingAudioBlob = null;
+  audioChunks = [];
+}
+
+async function transcribeAudio(blob) {
+  // Mostra "transcrevendo" no indicador
+  document.getElementById('rec-indicator').classList.add('active');
+  const recTimeEl = document.getElementById('rec-time');
+  if (recTimeEl) recTimeEl.textContent = '…';
+  const labelEl = document.getElementById('rec-indicator').querySelectorAll('span')[1];
+  if (labelEl) labelEl.textContent = 'transcrevendo...';
+
+  try {
+    // Groq Whisper aceita FormData com o arquivo de áudio diretamente
+    const formData = new FormData();
+    formData.append('file', blob, 'audio.webm');
+    formData.append('model', 'whisper-large-v3-turbo');
+    formData.append('language', 'pt');
+    formData.append('response_format', 'json');
+
+    const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${API_KEY}` },
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const transcribed = (data.text || '').trim();
+    if (transcribed) {
+      const input = document.getElementById('chat-input');
+      input.value = transcribed;
+      autoResize(input);
+      document.getElementById('send-btn').disabled = false;
+      input.focus();
+    } else {
+      alert('Não consegui entender o áudio. Tente falar mais claramente.');
+    }
+  } catch(err) {
+    alert('Erro na transcrição: ' + (err.message || 'Tente novamente.'));
+  } finally {
+    document.getElementById('rec-indicator').classList.remove('active');
+    pendingAudioBlob = null;
+    audioChunks = [];
+  }
+}
+
+// ── Input Handlers ────────────────────────────────────────────────────────────
+function handleChatKey(e) {
+  if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+function handleImgKey(e) {
+  if (e.key==='Enter') generateImage();
+}
+function autoResize(el) {
+  el.style.height='auto';
+  el.style.height=Math.min(el.scrollHeight,120)+'px';
+  document.getElementById('send-btn').disabled = (!el.value.trim() && !pendingImageBase64) || loading;
+}
+function updateGenBtn() {
+  const btn = document.getElementById('gen-btn');
+  btn.classList.toggle('active', !!document.getElementById('img-input').value.trim() && !imageLoading);
+}
+</script>
+</body>
+</html>
